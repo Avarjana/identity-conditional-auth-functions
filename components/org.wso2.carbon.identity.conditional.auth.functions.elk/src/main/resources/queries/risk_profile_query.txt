@@ -1,0 +1,32 @@
+{
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "match": {
+                        "event.payloadData.username.keyword": "[USERNAME]"
+                    }
+                }
+            ],
+            "filter": [
+                {
+                    "range": {
+                        "@timestamp": {
+                            "gte": "now-30m"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "aggs": {
+        "risk_score": {
+            "scripted_metric": {
+                "init_script": "state.risk = [];",
+                "map_script": "state.risk.add(doc['event.payloadData.authStepSuccess'].value ? -1 : 1); state.risk.add((doc['event.payloadData.isFirstLogin'].value && doc['event.payloadData.eventType.keyword'].value == 'overall') ? 2 : 0);",
+                "combine_script": "int risk = 0; for (t in state.risk) { risk += t } return risk",
+                "reduce_script": "int risk = 0; for (a in states) { risk += a } return risk < 0 ? 0 : risk"
+            }
+        }
+    }
+}
