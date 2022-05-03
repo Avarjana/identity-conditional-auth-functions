@@ -39,6 +39,7 @@ public class CallElasticFunctionImpl extends AbstractHTTPFunction implements Cal
     private static final Log LOG = LogFactory.getLog(CallElasticFunctionImpl.class);
 
     private static final ElasticConfigProvider elasticConfigProvider = ElasticConfigProvider.getInstance();
+
     public CallElasticFunctionImpl() {
 
         super();
@@ -46,7 +47,6 @@ public class CallElasticFunctionImpl extends AbstractHTTPFunction implements Cal
 
     @Override
     public void callElastic(String elasticDomain, Map<String, String> params, Map<String, Object> eventHandlers) {
-        LOG.error("===== ELK CALLED =====");
 
         HttpPost request = new HttpPost(elasticConfigProvider.getElasticSearchUrl(elasticDomain));
 
@@ -60,6 +60,7 @@ public class CallElasticFunctionImpl extends AbstractHTTPFunction implements Cal
         } catch (IOException exception) {
             LOG.error("Reading query config file failed");
         }
+
         executeHttpMethod(request, eventHandlers);
     }
 }

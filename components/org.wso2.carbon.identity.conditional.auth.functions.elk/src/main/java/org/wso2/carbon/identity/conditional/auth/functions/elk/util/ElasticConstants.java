@@ -24,11 +24,9 @@ package org.wso2.carbon.identity.conditional.auth.functions.elk.util;
  */
 public class ElasticConstants {
 
-    public static final String FUNC_CALL_ELASTIC = "callElastic";
-
     public static final String TYPE_APPLICATION_JSON = "application/json";
 
     public static final char DOMAIN_SEPARATOR = '.';
 
-    public static final String ELASTIC_SEARCH_PATH = "/auth/_search?size=0";
+    public static final String ELASTIC_SEARCH_PATH = "/auth-wso2-is/_search?size=0";
 }

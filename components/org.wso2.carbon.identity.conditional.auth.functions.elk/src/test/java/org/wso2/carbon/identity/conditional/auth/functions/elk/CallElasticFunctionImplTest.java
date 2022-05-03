@@ -17,8 +17,12 @@
 
 package org.wso2.carbon.identity.conditional.auth.functions.elk;
 
+
+import com.google.gson.Gson;
+import org.json.JSONObject;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
@@ -38,16 +42,16 @@ import org.wso2.carbon.identity.conditional.auth.functions.common.utils.ConfigPr
 import org.wso2.carbon.identity.conditional.auth.functions.test.utils.sequence.JsSequenceHandlerAbstractTest;
 import org.wso2.carbon.identity.conditional.auth.functions.test.utils.sequence.JsTestException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.msf4j.Response;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 
 import static org.testng.Assert.assertEquals;
 
@@ -60,11 +64,10 @@ public class CallElasticFunctionImplTest extends JsSequenceHandlerAbstractTest {
 
     private static final String TEST_SP_CONFIG = "http-post-test-sp.xml";
     private static final String TENANT_DOMAIN = "carbon.super";
-    private static final String STATUS = "status";
-    private static final String SUCCESS = "SUCCESS";
     private static final String FAILED = "FAILED";
-    private static final String EMAIL = "email";
     private static final String ALLOWED_DOMAIN = "abc";
+    private static final String ELASTIC_PAYLOAD_TEMPLATE = "{\"risk_score\":{\"value\":%d}}";
+    private static final Gson gsonInstance = new Gson();
 
     @InjectMicroservicePort
     private int microServicePort;
@@ -89,29 +92,38 @@ public class CallElasticFunctionImplTest extends JsSequenceHandlerAbstractTest {
         unsetAllowedDomains();
     }
 
-//    @Test
-    public void testCallElasticMethod() throws JsTestException {
+    @Test(dataProvider = "elasticAuthDataProvider")
+    public void testCallElasticMethodAuth(String username, String elasticUsername, String elasticPassword) throws JsTestException {
 
         String requestUrl = getRequestUrl();
-        String result = executeCallElasticFunction(requestUrl);
+        String result = executeCallElasticFunction(requestUrl, username, elasticUsername, elasticPassword);
 
-        assertEquals(result, FAILED, "The http post request was not successful. Result from request: " + result);
+        assertEquals(result, FAILED, "The elasticsearch request was not successful. Result from request: ");
     }
 
-//    @Test(dependsOnMethods = {"testCallElasticMethod"})
-    public void testCallElasticMethodUrlValidation() throws JsTestException {
+    @Test(dataProvider = "elasticPayloadDataProvider")
+    public void testCallElasticMethodPayload(String username, String elasticUsername, String elasticPassword, String riskScore) throws JsTestException {
 
-        setAllowedDomain(ALLOWED_DOMAIN);
         String requestUrl = getRequestUrl();
-        String result = executeCallElasticFunction(requestUrl);
 
-        assertEquals(result, FAILED, "The http post request should fail but it was successful. Result from request: "
-                + result);
+        String result = executeCallElasticFunction(requestUrl, username, elasticUsername, elasticPassword);
+
+        assertEquals(result, riskScore, "The elasticsearch score value is wrong.");
     }
 
-    private void setAllowedDomain(String domain) {
+    @Test(dependsOnMethods = {"testCallElasticMethodAuth", "testCallElasticMethodPayload"}, dataProvider = "elasticDefaultDataProvider")
+    public void testCallElasticMethodUrlValidation(String username, String elasticUsername, String elasticPassword) throws JsTestException {
 
-        ConfigProvider.getInstance().getAllowedDomainsForHttpFunctions().add(domain);
+        setAllowedDomain();
+        String requestUrl = getRequestUrl();
+        String result = executeCallElasticFunction(requestUrl, username, elasticUsername, elasticPassword);
+
+        assertEquals(result, FAILED, "The elasticsearch request should fail but it was successful.");
+    }
+
+    private void setAllowedDomain() {
+
+        ConfigProvider.getInstance().getAllowedDomainsForHttpFunctions().add(ALLOWED_DOMAIN);
     }
 
     private void unsetAllowedDomains() {
@@ -121,13 +133,13 @@ public class CallElasticFunctionImplTest extends JsSequenceHandlerAbstractTest {
 
     private String getRequestUrl() {
 
-        return "http://localhost:" + microServicePort + "/dummy-post";
+        return "http://localhost:" + microServicePort;
     }
 
-    private String executeCallElasticFunction(String requestUrl) throws JsTestException {
+    private String executeCallElasticFunction(String requestUrl, String username, String elasticUsername, String elasticPassword) throws JsTestException {
 
         ServiceProvider sp = sequenceHandlerRunner.loadServiceProviderFromResource(TEST_SP_CONFIG, this);
-        updateSPAuthScriptRequestUrl(sp, requestUrl);
+        updateSPAuthScript(sp, requestUrl, username, elasticUsername, elasticPassword);
 
         AuthenticationContext context = sequenceHandlerRunner.createAuthenticationContext(sp);
         SequenceConfig sequenceConfig = sequenceHandlerRunner.getSequenceConfig(context, sp);
@@ -144,30 +156,84 @@ public class CallElasticFunctionImplTest extends JsSequenceHandlerAbstractTest {
         return context.getSelectedAcr();
     }
 
-    private void updateSPAuthScriptRequestUrl(ServiceProvider sp, String url) {
+    private void updateSPAuthScript(ServiceProvider sp, String url, String username, String elasticUsername, String elasticPassword) {
 
         LocalAndOutboundAuthenticationConfig localAndOutboundAuthenticationConfig =
                 sp.getLocalAndOutBoundAuthenticationConfig();
         AuthenticationScriptConfig authenticationScriptConfig = localAndOutboundAuthenticationConfig
                 .getAuthenticationScriptConfig();
         String script = authenticationScriptConfig.getContent();
-        authenticationScriptConfig.setContent(String.format(script, url));
+        authenticationScriptConfig.setContent(String.format(script, url, username, elasticUsername, elasticPassword));
         localAndOutboundAuthenticationConfig.setAuthenticationScriptConfig(authenticationScriptConfig);
         sp.setLocalAndOutBoundAuthenticationConfig(localAndOutboundAuthenticationConfig);
     }
 
-    @POST
-    @Path("/dummy-post")
-    @Produces("application/json")
-    @Consumes("application/json")
-    public Map<String, String> dummyPost(Map<String, String> data) {
-
-        Map<String, String> response = new HashMap<>();
-        if (data.containsKey(EMAIL)) {
-            response.put(STATUS, SUCCESS);
+    private String elsticPayloadGenerator(String username) {
+        if (username.equals("riskyUser")) {
+            return String.format(ELASTIC_PAYLOAD_TEMPLATE, 2);
         } else {
-            response.put(STATUS, FAILED);
+            return String.format(ELASTIC_PAYLOAD_TEMPLATE, 0);
         }
-        return response;
+    }
+
+    @POST
+    @Path("/auth-wso2-is/_search")
+    @Consumes("application/json")
+    public String dummyPost(Map<String, Object> data, @Context Response res, @HeaderParam("Authorization") String authHeader) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        if (!isValidElasticCredentials(authHeader)) {
+            res.setStatus(401);
+            return "{}";
+        }
+
+        String jsonQuery = gsonInstance.toJson(data.get("query"));
+        JSONObject query = new JSONObject(jsonQuery);
+
+        String username = query
+                .getJSONObject("bool")
+                .getJSONArray("must")
+                .getJSONObject(0)
+                .getJSONObject("match")
+                .getString("event.payloadData.username.keyword");
+
+        Object aggregations = gsonInstance.fromJson(elsticPayloadGenerator(username), Object.class);
+
+        response.put("aggregations", aggregations);
+
+        return gsonInstance.toJson(response);
+    }
+
+    private boolean isValidElasticCredentials(String authHeader) {
+        String authHeaderDecoded = new String(Base64.getDecoder().decode(authHeader.split(" ")[1]));
+        return authHeaderDecoded.equals("elasticUsername:elasticPassword");
+    }
+
+    @DataProvider(name = "elasticAuthDataProvider")
+    public Object[][] elasticDataProvider() {
+
+        return new Object[][]{
+                {"user", "otherUsername", "elasticPassword"},
+                {"user", "elasticUsername", "otherPassword"},
+                {"user", "otherUsername", "otherPassword"}
+        };
+    }
+
+    @DataProvider(name = "elasticPayloadDataProvider")
+    public Object[][] elasticPayloadDataProvider() {
+
+        return new Object[][]{
+                {"nonRiskyUser", "elasticUsername", "elasticPassword", "0.0"},
+                {"riskyUser", "elasticUsername", "elasticPassword", "2.0"}
+        };
+    }
+
+    @DataProvider(name = "elasticDefaultDataProvider")
+    public Object[][] elasticDefaultDataProvider() {
+
+        return new Object[][]{
+                {"user", "elasticUsername", "elasticPassword"}
+        };
     }
 }

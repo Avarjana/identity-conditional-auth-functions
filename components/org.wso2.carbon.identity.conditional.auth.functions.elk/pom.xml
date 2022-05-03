@@ -84,6 +84,10 @@
             <artifactId>msf4j-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.conditional.auth.functions</groupId>
+            <artifactId>org.wso2.carbon.identity.conditional.auth.functions.test.utils</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

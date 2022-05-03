@@ -48,7 +48,7 @@ public class ElasticConfigProvider {
     }
 
     public String getElasticSearchUrl(String elasticDomain) {
-        return "https://" + elasticDomain + ELASTIC_SEARCH_PATH;
+        return elasticDomain + ELASTIC_SEARCH_PATH;
     }
 
     public String getQuery(Map<String, String> params) throws IOException {

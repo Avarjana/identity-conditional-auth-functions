@@ -89,12 +89,12 @@ public abstract class AbstractHTTPFunction {
 
             try (CloseableHttpResponse response = client.execute(request)) {
                 responseCode = response.getStatusLine().getStatusCode();
-                LOG.error("=== RESPONSE => " + responseCode + " ===");
                 if (responseCode >= 200 && responseCode < 300) {
                     outcome = Constants.OUTCOME_SUCCESS;
                     String jsonString = EntityUtils.toString(response.getEntity());
                     JSONParser parser = new JSONParser();
-                    json = (JSONObject) parser.parse(jsonString);
+                    JSONObject responseBody = (JSONObject) parser.parse(jsonString);
+                    json = (JSONObject) responseBody.get("aggregations");
                 } else {
                     outcome = Constants.OUTCOME_FAIL;
                 }
