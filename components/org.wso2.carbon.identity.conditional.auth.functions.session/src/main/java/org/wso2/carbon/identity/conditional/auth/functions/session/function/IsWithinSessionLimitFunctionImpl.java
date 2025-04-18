@@ -73,13 +73,13 @@ public class IsWithinSessionLimitFunctionImpl implements IsWithinSessionLimitFun
 
         if (authenticatedUser == null) {
             if (log.isDebugEnabled()) {
-                log.debug("Unable to find the authenticated user from the Authentication context.");
+                log.debug("Unable to find the authenticated user from the Authentication context");
             }
             throw new FrameworkException("Unable to find the Authenticated user from previous step");
         }
         int sessionCount = getActiveSessionCount(authenticatedUser);
         if (log.isDebugEnabled()) {
-            log.debug("Active session count: " + sessionCount + " and session limit : " + sessionLimit);
+            log.debug("Active session count: {} and session limit: {}", sessionCount, sessionLimit);
         }
         if (sessionCount < sessionLimit) {
             state = true;
@@ -116,7 +116,7 @@ public class IsWithinSessionLimitFunctionImpl implements IsWithinSessionLimitFun
                         authenticatedUser.getUserName(),
                         authenticatedUser.getUserStoreDomain()));
         if (log.isDebugEnabled()) {
-            log.debug("JSON payload for retrieving data :" + paramMap.toString());
+            log.debug("JSON payload for retrieving data: {}", paramMap.toString());
         }
         HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
         StringEntity entity = new StringEntity(paramMap.toString(), ContentType.APPLICATION_JSON);
@@ -141,17 +141,17 @@ public class IsWithinSessionLimitFunctionImpl implements IsWithinSessionLimitFun
                         responseResult.append(line);
                     }
                     if (log.isDebugEnabled()) {
-                        log.debug("Response from the data source :" + responseResult.toString());
+                        log.debug("Response from the data source: {}", responseResult.toString());
                     }
                     sessionCount = parseInt(responseResult.toString());
                     return sessionCount;
                 } catch (IOException e) {
-                    throw new FrameworkException("Problem occurred while processing the HTTP Response ", e);
+                    throw new FrameworkException("Problem occurred while processing the HTTP Response", e);
                 } catch (NumberFormatException e) {
-                    throw new FrameworkException("Problem occurred while parsing response result ", e);
+                    throw new FrameworkException("Problem occurred while parsing response result", e);
                 }
             } else {
-                throw new FrameworkException("Failed to retrieve data from endpoint.Response status code :" +
+                throw new FrameworkException("Failed to retrieve data from endpoint. Response status code: " + 
                         response.getStatusLine().getStatusCode());
             }
         } catch (IOException e) {
