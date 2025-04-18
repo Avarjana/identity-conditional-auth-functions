@@ -123,34 +123,33 @@ public class CallElasticFunctionImpl extends AbstractElasticHelper implements Ca
                                         responseMap.put("risk_score", score);
                                         asyncReturn.accept(authenticationContext, responseMap, OUTCOME_SUCCESS);
                                     } catch (JSONException e) {
-                                        LOG.error("Error while building response from analytics engine call for " +
-                                                "session data key: " + authenticationContext.getContextIdentifier(), e);
+                                        LOG.error("Error while building response from analytics engine call for session data key: {}", 
+                                                authenticationContext.getContextIdentifier(), e);
                                         asyncReturn.accept(authenticationContext, responseMap, OUTCOME_FAIL);
                                     } catch (IOException e) {
-                                        LOG.error("Error while reading response from analytics engine call for " +
-                                                "session data key: " + authenticationContext.getContextIdentifier(), e);
+                                        LOG.error("Error while reading response from analytics engine call for session data key: {}", 
+                                                authenticationContext.getContextIdentifier(), e);
                                         asyncReturn.accept(authenticationContext, responseMap, OUTCOME_FAIL);
                                     }
                                 } else {
                                     asyncReturn.accept(authenticationContext, responseMap, OUTCOME_FAIL);
                                 }
                             } catch (FrameworkException e) {
-                                LOG.error("Error while proceeding after successful response from analytics engine " +
-                                                "call for session data key: " + authenticationContext.getContextIdentifier(),
-                                        e);
+                                LOG.error("Error while proceeding after successful response from analytics engine call for session data key: {}", 
+                                        authenticationContext.getContextIdentifier(), e);
                             }
                         }
 
                         @Override
                         public void failed(final Exception ex) {
 
-                            LOG.error("Failed to invoke analytics engine for session data key: " +
+                            LOG.error("Failed to invoke analytics engine for session data key: {}", 
                                     authenticationContext.getContextIdentifier(), ex);
                             if (requestAtomicInteger.decrementAndGet() <= 0) {
                                 try {
                                     if (LOG.isDebugEnabled()) {
-                                        LOG.debug(" All the calls to analytics engine failed for session " +
-                                                "data key: " + authenticationContext.getContextIdentifier());
+                                        LOG.debug("All the calls to analytics engine failed for session data key: {}", 
+                                                authenticationContext.getContextIdentifier());
                                     }
                                     String outcome = OUTCOME_FAIL;
                                     if ((ex instanceof SocketTimeoutException)
@@ -159,9 +158,8 @@ public class CallElasticFunctionImpl extends AbstractElasticHelper implements Ca
                                     }
                                     asyncReturn.accept(authenticationContext, Collections.emptyMap(), outcome);
                                 } catch (FrameworkException e) {
-                                    LOG.error("Error while proceeding after failed response from analytics engine " +
-                                            "call for session data key: " + authenticationContext
-                                            .getContextIdentifier(), e);
+                                    LOG.error("Error while proceeding after failed response from analytics engine call for session data key: {}", 
+                                            authenticationContext.getContextIdentifier(), e);
                                 }
                             }
                         }
@@ -169,19 +167,18 @@ public class CallElasticFunctionImpl extends AbstractElasticHelper implements Ca
                         @Override
                         public void cancelled() {
 
-                            LOG.error("Invocation analytics engine for session data key: " +
-                                    authenticationContext.getContextIdentifier() + " is cancelled.");
+                            LOG.error("Invocation analytics engine for session data key: {} is cancelled", 
+                                    authenticationContext.getContextIdentifier());
                             if (requestAtomicInteger.decrementAndGet() <= 0) {
                                 try {
                                     if (LOG.isDebugEnabled()) {
-                                        LOG.debug(" All the calls to analytics engine failed for session " +
-                                                "data key: " + authenticationContext.getContextIdentifier());
+                                        LOG.debug("All the calls to analytics engine failed for session data key: {}", 
+                                                authenticationContext.getContextIdentifier());
                                     }
                                     asyncReturn.accept(authenticationContext, Collections.emptyMap(), OUTCOME_FAIL);
                                 } catch (FrameworkException e) {
-                                    LOG.error("Error while proceeding after cancelled response from analytics engine " +
-                                            "call for session data key: " + authenticationContext
-                                            .getContextIdentifier(), e);
+                                    LOG.error("Error while proceeding after cancelled response from analytics engine call for session data key: {}", 
+                                            authenticationContext.getContextIdentifier(), e);
                                 }
                             }
                         }
@@ -190,10 +187,10 @@ public class CallElasticFunctionImpl extends AbstractElasticHelper implements Ca
                 }
 
             } catch (IdentityEventException e) {
-                LOG.error("Error while creating authentication. ", e);
+                LOG.error("Error while creating authentication", e);
                 asyncReturn.accept(authenticationContext, Collections.emptyMap(), OUTCOME_FAIL);
             } catch (IOException e) {
-                LOG.error("Reading query config file failed.");
+                LOG.error("Reading query config file failed", e);
                 asyncReturn.accept(authenticationContext, Collections.emptyMap(), OUTCOME_FAIL);
             }
 

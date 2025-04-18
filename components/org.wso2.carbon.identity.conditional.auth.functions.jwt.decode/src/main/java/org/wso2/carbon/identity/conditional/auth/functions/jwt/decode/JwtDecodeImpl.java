@@ -53,10 +53,10 @@ public class JwtDecodeImpl implements JwtDecode {
             try {
                 decodedAssertion = getDecodedAssertion(clientAssertion, isParameterInPayload);
             } catch (ParseException e) {
-                log.error("Error while parsing the client assertion", e);
+                log.error("Error while parsing the client assertion in JWT decode", e);
             }
             if (log.isDebugEnabled()) {
-                log.debug("Decoded assertion: " + decodedAssertion);
+                log.debug("Decoded assertion: {}", decodedAssertion);
             }
             if (decodedAssertion != null && decodedAssertion.containsKey(parameterName)) {
                 return decodedAssertion.get(parameterName).toString();
