@@ -22,7 +22,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           # Define the review focus areas
-          prompt: "Review the PR changes. Focus on log improvemnts and missing logs. Suggest improvements where appropriate."
+          direct_prompt: "Review the PR changes. Focus on log improvemnts and missing logs. Suggest improvements where appropriate."
 
           # Limited tools for safer review operations
           allowed_tools: "Bash(git:*),View,GlobTool"
