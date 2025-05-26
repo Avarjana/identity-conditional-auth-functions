@@ -251,6 +251,6 @@ public class AnalyticsFunctionsServiceComponent {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Identity Governance service is unset from functions");
         }
-        // Do nothing.
+        // Do nothing. 
     }
 }
