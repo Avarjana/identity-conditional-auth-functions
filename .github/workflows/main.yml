@@ -7,6 +7,9 @@ on:
 jobs:
   code-review:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write    # Required for OIDC token
+      contents: read     # Allows checking out code
     steps:
       # Check out the code to allow git diff operations
       - name: Checkout code
