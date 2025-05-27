@@ -21,10 +21,8 @@ jobs:
         uses: anthropics/claude-code-action@main
         with:
           direct_prompt: |
-            Please review this PR. Look at the changes and provide thoughtful feedback on:
-            - Log improvements
-            - Missing logs
-
-            Be constructive and specific in your feedback. Give inline comments where applicable.
+            Please review this PR. Always give inline comments for following log improvements.
+            - Log improvements for existing log lines
+            - Missing logs in places
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: "mcp__github__add_pull_request_review_comment"
