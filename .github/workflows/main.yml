@@ -1,27 +1,28 @@
-name: Claude Code Review
+name: Auto review PRs
 
 on:
   pull_request:
-    types: [opened, synchronize]  # Runs on new PRs and updates
+    types: [opened, synchronize]
 
 jobs:
-  code-review:
+  auto-review:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
+
     steps:
-      # Check out the code to allow git diff operations
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for accurate diffs
+          fetch-depth: 1
 
-      - name: Run Code Review with Claude
-        id: code-review
-        uses: anthropics/claude-code-action@beta
+      - name: Auto review PR
+        uses: anthropics/claude-code-action@main
         with:
-          # Define the review focus areas
-          prompt: "Review the PR changes. Focus on log improvemnts and missing logs. Suggest improvements where appropriate."
-
-          # Limited tools for safer review operations
-          allowed_tools: "Bash(git:*),View,GlobTool"
-
+          direct_prompt: |
+            Please review this PR. Always give inline comments for following log improvements.
+            - Log improvements for existing log lines
+            - Missing logs in places
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: "mcp__github__add_pull_request_review_comment"
